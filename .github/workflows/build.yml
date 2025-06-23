@@ -1,0 +1,37 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Build plugin
+        run: msbuild src/auto_follow.sln /p:Configuration=Release /p:Platform=x64
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dll
+          path: bin/Release/x64/auto_follow.dll
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-dll
+          path: release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/auto_follow.dll
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
